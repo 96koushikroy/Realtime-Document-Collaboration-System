@@ -17,10 +17,10 @@ A collaborative editor built for real-time, multi-user editing with semantic sea
 
 - **Frontend:** React
 - **Backend:** Express.js
-- **Database:** MongoDB
+- **Database:** PostgreSQL + pgVector
 - **Real-time Sync:** Operational Transform (OT)
 - **Semantic Search:** Retrieval-Augmented Generation (RAG)
-- **Deployment:** [Optional: add if you have hosting info]
+- **Deployment:** TBD (Probably Vercel + AWS)
 
 ---
 
@@ -36,8 +36,8 @@ A collaborative editor built for real-time, multi-user editing with semantic sea
    - RAG integration to perform semantic search and contextual suggestions
 
 3. **Database:**  
-   - PostgreSql stores user data, documents, and OT operation history
-   - Addon pgVectors store the semantic embeddings
+   - PostgreSQL stores user data, documents, and OT operation history
+   - Extension pgVectors store the semantic embeddings
 
 ---
 
