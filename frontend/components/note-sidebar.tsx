@@ -15,6 +15,7 @@ interface NoteSidebarProps {
   onSelectNote: (noteId: string) => void
   onNewNote: () => void
   onDeleteNote: (noteId: string) => void
+  sessionId: string
 }
 
 export function NoteSidebar({
@@ -25,6 +26,7 @@ export function NoteSidebar({
   onSelectNote,
   onNewNote,
   onDeleteNote,
+  sessionId,
 }: NoteSidebarProps) {
   const formatDate = (date: Date) => {
     const now = new Date()
@@ -56,6 +58,7 @@ export function NoteSidebar({
             New
           </Button>
         </div>
+
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -115,6 +118,16 @@ export function NoteSidebar({
           )}
         </div>
       </ScrollArea>
+      <div className="p-3 border-t border-sidebar-border">
+        <button
+          className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-md bg-sidebar-accent/50 hover:bg-sidebar-accent transition-colors group"
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-xs text-muted-foreground font-medium">Session</span>
+            <code className="text-xs font-mono text-sidebar-foreground truncate">{sessionId}</code>
+          </div>
+        </button>
+      </div>
     </aside>
   )
 }

@@ -17,9 +17,28 @@ export default function NotesPage() {
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [isCreatingNew, setIsCreatingNew] = useState(false)
+  const [sessionId, setSessionId] = useState<string>(() => {
+    try {
+      const sId = localStorage.getItem("session_id")
+      return sId ?? ""
+    } catch {
+      return ""
+    }
+  })
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     let mounted = true
+    setMounted(true)
+    if (!sessionId) {
+      try {
+        const newId = crypto.randomUUID()
+        localStorage.setItem("session_id", newId)
+        if (mounted) setSessionId(newId)
+      } catch (err) {
+        console.error("Failed to create session id:", err)
+      }
+    }
 
     const fetchNotes = async () => {
       try {
@@ -116,6 +135,7 @@ export default function NotesPage() {
         onSelectNote={handleSelectNote}
         onNewNote={handleNewNote}
         onDeleteNote={handleDeleteNote}
+        sessionId={mounted ? sessionId : ""}
       />
       <NoteEditor note={selectedNote} onSave={handleSaveNote} isNewNote={isCreatingNew} />
     </div>
