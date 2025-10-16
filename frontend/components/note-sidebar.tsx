@@ -95,7 +95,7 @@ export function NoteSidebar({
                         {note.title || "Untitled Note"}
                       </h3>
                       <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{note.body || "No content"}</p>
-                      <p className="text-xs text-muted-foreground">{formatDate(note.updatedAt)}</p>
+                      <p className="text-xs text-muted-foreground">{formatDate(note.createdAt)}</p>
                     </div>
                     <Button
                       variant="ghost"

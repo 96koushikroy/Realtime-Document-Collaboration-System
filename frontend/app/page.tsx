@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import axios from "axios"
 import { NoteSidebar } from "@/components/note-sidebar"
 import { NoteEditor } from "@/components/note-editor"
 
@@ -9,7 +10,6 @@ export interface Note {
   title: string
   body: string
   createdAt: Date
-  updatedAt: Date
 }
 
 export default function NotesPage() {
@@ -17,6 +17,33 @@ export default function NotesPage() {
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [isCreatingNew, setIsCreatingNew] = useState(false)
+
+  useEffect(() => {
+    let mounted = true
+
+    const fetchNotes = async () => {
+      try {
+        const res = await axios.get("http://localhost:3000/notes")
+        if (!mounted) return
+        const serverNotes: Note[] = (res.data || []).map((n: any) => ({
+          id: String(n.id),
+          title: String(n.note_title || ""),
+          body: String(n.note || ""),
+          createdAt: n.createdAt ? new Date(n.createdAt) : new Date(),
+        }))
+        setNotes(serverNotes)
+      } catch (err) {
+        console.error("Failed to fetch notes:", err)
+      }
+    }
+
+    fetchNotes()
+
+    return () => {
+      mounted = false
+    }
+  }, [])
+
 
   const selectedNote = notes.find((note) => note.id === selectedNoteId)
 
@@ -26,7 +53,22 @@ export default function NotesPage() {
       note.body.toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
-  const handleSaveNote = (title: string, body: string) => {
+  const postNote = async (sessionId: string | null, note_title: string, noteBody: string) => {
+    try {
+      const payload = {
+        session_id: sessionId,
+        note_title,
+        note: noteBody,
+      }
+      const response = await axios.post("http://localhost:3000/notes", payload)
+      return response.data
+    } catch (error) {
+      console.error("Failed to post note:", error)
+      throw error
+    }
+  }
+
+  const handleSaveNote = async (title: string, body: string) => {
     if (selectedNoteId) {
       // Update existing note
       setNotes((prev) =>
@@ -39,8 +81,8 @@ export default function NotesPage() {
         title,
         body,
         createdAt: new Date(),
-        updatedAt: new Date(),
       }
+      await postNote("some-random-id", title, body)
       setNotes((prev) => [newNote, ...prev])
       setSelectedNoteId(newNote.id)
       setIsCreatingNew(false)
