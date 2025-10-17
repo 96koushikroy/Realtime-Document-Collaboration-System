@@ -1,6 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors'
+import { initPinecone } from "./db.js"
 import pool from './db.js';
 
 dotenv.config();
@@ -23,6 +24,11 @@ app.post('/notes', async (req, res) => {
       'INSERT INTO notes (session_id, note_title, note) VALUES ($1, $2, $3) RETURNING *',
       [session_id, note_title, note]
     );
+    const saved = result.rows[0];
+    const pc = req.app.locals.pinecone;
+    const vectorId = `note-${saved.id}`;
+    await upsertToPinecone(pc, vectorId, session_id, note_title, note);
+
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error('Error inserting note:', err);
@@ -41,5 +47,40 @@ app.get('/notes', async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+async function upsertToPinecone(pineconeClient, note_id, session_id, note_title, note) {
+  if (!pineconeClient) {
+    throw new Error('Pinecone client not available');
+  }
+  const namespace = pineconeClient.index("my-notes-index", "https://my-notes-index-pxln6de.svc.aped-4627-b74a.pinecone.io").namespace("__default__");
+
+  await namespace.upsertRecords([
+    {
+      "_id": note_id,
+      "chunk_text": `${note_title}: ${note}`,
+      "session_id": session_id,
+      "note_title": note_title,
+      "note": note
+    },
+  ]);
+}
+
+async function start() {
+  try {
+    const pc = await initPinecone()
+    console.log("Pinecone initialized")
+    // optionally keep pc for use elsewhere; attach to app.locals
+    app.locals.pinecone = pc
+  } catch (err) {
+    console.error("Failed to init Pinecone:", err)
+  }
+
+  const port = process.env.PORT || 3000
+  app.listen(port, () => {
+    console.log(`Server listening on http://localhost:${port}`)
+  })
+}
+
+start().catch((err) => {
+  console.error("Fatal error starting server:", err)
+  process.exit(1)
+})
