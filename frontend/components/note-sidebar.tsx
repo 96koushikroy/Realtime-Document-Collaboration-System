@@ -45,8 +45,8 @@ export function NoteSidebar({
   }
 
   return (
-    <aside className="w-80 border-r border-border bg-sidebar flex flex-col">
-      <div className="p-4 border-b border-sidebar-border">
+    <aside className="w-80 border-r border-border bg-sidebar flex flex-col h-full">
+      <div className="sticky top-0 z-10 p-4 border-b border-sidebar-border bg-sidebar">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-xl font-semibold text-sidebar-foreground">Notes</h1>
           <Button
@@ -71,8 +71,8 @@ export function NoteSidebar({
         </div>
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="p-2">
+      <ScrollArea className="flex-1 overflow-y-auto">
+        <div className="p-2 bg-sidebar">
           {notes.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
               <FileText className="h-12 w-12 text-muted-foreground mb-3" />
@@ -118,7 +118,7 @@ export function NoteSidebar({
           )}
         </div>
       </ScrollArea>
-      <div className="p-3 border-t border-sidebar-border">
+      <div className="sticky bottom-0 z-10 p-3 border-t border-sidebar-border bg-sidebar">
         <button
           className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-md bg-sidebar-accent/50 hover:bg-sidebar-accent transition-colors group"
         >
