@@ -3,12 +3,40 @@ import dotenv from 'dotenv';
 import cors from 'cors'
 import { initPinecone } from "./db.js"
 import pool from './db.js';
+import { Server } from 'socket.io';
+import http from 'http'
 
 dotenv.config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:3001",
+    methods: ["GET", "POST"]
+  }
+});
+
+io.on('connection', (socket) => {
+  console.log(`User connected: ${socket.id}`);
+
+  socket.on('join_note_room', (noteId) => {
+    socket.join(noteId);
+    console.log(`User ${socket.id} joined room for note: ${noteId}`);
+  });
+
+  socket.on('send_changes', (data) => {
+    const { noteId, title, body } = data;
+    socket.to(noteId).emit('receive_changes', { title, body });
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`User disconnected: ${socket.id}`);
+  });
+});
 
 app.get('/', (req, res) => {
   res.send('Notes API is running 🚀');
@@ -36,7 +64,6 @@ app.post('/notes', async (req, res) => {
   }
 });
 
-// Get all notes
 app.get('/notes', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM notes ORDER BY created_at DESC');
@@ -119,7 +146,7 @@ async function start() {
   }
 
   const port = process.env.PORT || 3000
-  app.listen(port, () => {
+  server.listen(port, () => {
     console.log(`Server listening on http://localhost:${port}`)
   })
 }

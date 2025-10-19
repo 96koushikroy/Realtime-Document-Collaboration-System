@@ -4,6 +4,10 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Save, FileText } from "lucide-react"
 import type { Note } from "@/app/page"
+import io, { Socket } from "socket.io-client"
+
+// Define socket outside the component to prevent re-instantiation on re-renders
+let socket: Socket
 
 interface NoteEditorProps {
   note?: Note
@@ -15,6 +19,7 @@ export function NoteEditor({ note, onSave, isNewNote }: NoteEditorProps) {
   const [title, setTitle] = useState("")
   const [body, setBody] = useState("")
 
+  // This effect updates the editor when a different note is selected
   useEffect(() => {
     if (note) {
       setTitle(note.title)
@@ -24,6 +29,46 @@ export function NoteEditor({ note, onSave, isNewNote }: NoteEditorProps) {
       setBody("")
     }
   }, [note])
+
+  // This effect manages the real-time WebSocket connection
+  useEffect(() => {
+    socket = io("http://localhost:3000")
+
+    socket.on('connect', () => {
+      console.log('Connected to WebSocket server!')
+      if (note?.id) {
+        socket.emit('join_note_room', note.id)
+      }
+    })
+
+    socket.on('receive_changes', (data: { title: string; body: string }) => {
+      setTitle(data.title)
+      setBody(data.body)
+    })
+
+    return () => {
+      if (socket) {
+        socket.disconnect()
+      }
+    }
+  }, [note?.id])
+
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTitle = e.target.value
+    setTitle(newTitle)
+    if (socket && note?.id) {
+      socket.emit('send_changes', { noteId: note.id, title: newTitle, body })
+    }
+  }
+
+  const handleBodyChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newBody = e.target.value
+    setBody(newBody)
+    // 5. Send title and body changes to the server
+    if (socket && note?.id) {
+      socket.emit('send_changes', { noteId: note.id, title, body: newBody })
+    }
+  }
 
   const handleSave = () => {
     if (title.trim() || body.trim()) {
@@ -42,13 +87,13 @@ export function NoteEditor({ note, onSave, isNewNote }: NoteEditorProps) {
               type="text"
               placeholder="Untitled"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={handleTitleChange}
               className="text-4xl font-bold bg-transparent border-none outline-none mb-8 placeholder:text-muted-foreground/40 text-foreground"
             />
             <textarea
               placeholder="Start writing..."
               value={body}
-              onChange={(e) => setBody(e.target.value)}
+              onChange={handleBodyChange}
               className="flex-1 resize-none bg-transparent border-none outline-none text-lg leading-relaxed placeholder:text-muted-foreground/40 text-foreground/90 font-normal"
             />
           </div>
