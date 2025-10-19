@@ -16,6 +16,7 @@ export default function NotesPage() {
   const [notes, setNotes] = useState<Note[]>([])
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
+  const [isSearching, setIsSearching] = useState(false);
   const [isCreatingNew, setIsCreatingNew] = useState(false)
   const [sessionId, setSessionId] = useState<string>(() => {
     try {
@@ -26,6 +27,47 @@ export default function NotesPage() {
     }
   })
   const [mounted, setMounted] = useState(false)
+
+  const searchNotes = async (query: string) => {
+    if (!query.trim()) {
+      try {
+        const res = await axios.get("http://localhost:3000/notes")
+        const serverNotes: Note[] = (res.data || []).map((n: any) => ({
+          id: String(n.id),
+          title: String(n.note_title || ""),
+          body: String(n.note || ""),
+          createdAt: new Date(n.created_at),
+        }))
+
+        console.log(serverNotes)
+        setNotes(serverNotes)
+      } catch (err) {
+        console.error("Failed to fetch notes:", err)
+      }
+      return
+    }
+
+    try {
+      setIsSearching(true)
+      const res = await axios.post("http://localhost:3000/search", {
+        query: query.trim(),
+        limit: 10
+      })
+
+      const searchResults = res.data.map((n: any) => ({
+        id: String(n.id),
+        title: String(n.note_title || ""),
+        body: String(n.note || ""),
+        createdAt: new Date(n.created_at),
+      }))
+
+      setNotes(searchResults)
+    } catch (err) {
+      console.error("Search failed:", err)
+    } finally {
+      setIsSearching(false)
+    }
+  }
 
   useEffect(() => {
     let mounted = true
@@ -48,7 +90,7 @@ export default function NotesPage() {
           id: String(n.id),
           title: String(n.note_title || ""),
           body: String(n.note || ""),
-          createdAt: n.createdAt ? new Date(n.createdAt) : new Date(),
+          createdAt: new Date(n.created_at),
         }))
         setNotes(serverNotes)
       } catch (err) {
@@ -63,14 +105,17 @@ export default function NotesPage() {
     }
   }, [])
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      searchNotes(searchQuery)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
 
   const selectedNote = notes.find((note) => note.id === selectedNoteId)
 
-  const filteredNotes = notes.filter(
-    (note) =>
-      note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      note.body.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
+  const filteredNotes = notes
 
   const postNote = async (sessionId: string | null, note_title: string, noteBody: string) => {
     try {

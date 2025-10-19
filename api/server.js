@@ -52,10 +52,11 @@ async function upsertToPinecone(pineconeClient, note_id, session_id, note_title,
     throw new Error('Pinecone client not available');
   }
   const namespace = pineconeClient.index("my-notes-index", "https://my-notes-index-pxln6de.svc.aped-4627-b74a.pinecone.io").namespace("__default__");
-
+  const uuid = crypto.randomUUID();
   await namespace.upsertRecords([
     {
-      "_id": note_id,
+      "_id": uuid,
+      "note_id": note_id,
       "chunk_text": `${note_title}: ${note}`,
       "session_id": session_id,
       "note_title": note_title,
@@ -63,6 +64,49 @@ async function upsertToPinecone(pineconeClient, note_id, session_id, note_title,
     },
   ]);
 }
+
+app.post('/search', async (req, res) => {
+  const { query, limit = 5 } = req.body;
+
+  if (!query?.trim()) {
+    return res.status(400).json({ error: 'Query is required' });
+  }
+
+  try {
+    const pc = req.app.locals.pinecone;
+    if (!pc) {
+      return res.status(500).json({ error: 'Pinecone client not initialized' });
+    }
+
+    const namespace = pc.index("my-notes-index", "https://my-notes-index-pxln6de.svc.aped-4627-b74a.pinecone.io").namespace("__default__");
+
+    const response = await namespace.searchRecords({
+      query: {
+        topK: limit,
+        inputs: {text: query},
+      },
+      fields: ['note_id'],
+    });
+
+    const noteIds = response.result.hits.map(match => match.fields.note_id.replace('note-', ''));
+
+    if (noteIds.length) {
+      const result = await pool.query(
+        'SELECT * FROM notes WHERE id = ANY($1) ORDER BY created_at DESC',
+        [noteIds]
+      );
+      res.json(result.rows);
+    } else {
+      res.json([]);
+    }
+
+  } catch (err) {
+    console.error('Search error:', err);
+    res.status(500).json({ error: 'Search failed' });
+  }
+});
+
+
 
 async function start() {
   try {
