@@ -1,5 +1,7 @@
 # Distributed Realtime Collaboration System (2025)
 
+![Demo of the collaborative editor in action](./assets/demo.gif)
+
 A collaborative editor built for real-time, multi-user editing with semantic search support. This system leverages **Operational Transform (OT)** for conflict-free synchronization across distributed sessions and **Retrieval-Augmented Generation (RAG)** for context-aware document retrieval.
 
 ---
