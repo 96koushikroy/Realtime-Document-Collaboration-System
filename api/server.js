@@ -72,6 +72,31 @@ app.post('/notes', async (req, res) => {
   }
 });
 
+app.put('/notes/:id', async (req, res) => {
+  const { id } = req.params;
+  const { note_title, note, session_id } = req.body;
+
+  try {
+    const result = await pool.query(
+      'UPDATE notes SET note_title = $1, note = $2, updated_at = NOW() WHERE id = $3 RETURNING *',
+      [note_title, note, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Note not found' });
+    }
+
+    const pc = req.app.locals.pinecone;
+    const vectorId = `note-${id}`;
+    await upsertToPinecone(pc, vectorId, session_id, note_title, note);
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error updating note:', err);
+    res.status(500).json({ error: 'Failed to update note' });
+  }
+});
+
 app.get('/notes', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM notes ORDER BY created_at DESC');

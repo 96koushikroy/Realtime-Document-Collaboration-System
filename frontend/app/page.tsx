@@ -131,9 +131,22 @@ export default function NotesPage() {
     }
   }
 
+  const updateNote = async (sessionId: string | null, note_title: string, noteBody: string) => {
+    try {
+      await axios.put(`http://localhost:3000/notes/${selectedNoteId}`, {
+        note_title: note_title,
+        note: noteBody,
+        session_id: sessionId,
+      });
+    } catch (error) {
+      console.error("Failed to post note:", error)
+      throw error
+    }
+  }
+
   const handleSaveNote = async (title: string, body: string) => {
     if (selectedNoteId) {
-      // Update existing note
+      updateNote(sessionId, title, body)
       setNotes((prev) =>
         prev.map((note) => (note.id === selectedNoteId ? { ...note, title, body, updatedAt: new Date() } : note)),
       )
