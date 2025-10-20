@@ -19,7 +19,7 @@ A collaborative editor built for real-time, multi-user editing with semantic sea
 
 - **Frontend:** React
 - **Backend:** Express.js
-- **Database:** PostgreSQL + pgVector
+- **Database:** PostgreSQL + Pinecone (To Store Vectors)
 - **Real-time Sync:** Operational Transform (OT)
 - **Semantic Search:** Retrieval-Augmented Generation (RAG)
 - **Deployment:** TBD (Probably Vercel + AWS)
