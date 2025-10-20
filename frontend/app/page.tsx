@@ -39,7 +39,6 @@ export default function NotesPage() {
           createdAt: new Date(n.created_at),
         }))
 
-        console.log(serverNotes)
         setNotes(serverNotes)
       } catch (err) {
         console.error("Failed to fetch notes:", err)
@@ -182,7 +181,7 @@ export default function NotesPage() {
         onDeleteNote={handleDeleteNote}
         sessionId={mounted ? sessionId : ""}
       />
-      <NoteEditor note={selectedNote} onSave={handleSaveNote} isNewNote={isCreatingNew} />
+      <NoteEditor note={selectedNote} onSave={handleSaveNote} isNewNote={isCreatingNew} sessionId={sessionId} />
     </div>
   )
 }

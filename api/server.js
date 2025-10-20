@@ -23,8 +23,11 @@ const io = new Server(server, {
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
 
-  socket.on('join_note_room', (noteId) => {
+  socket.on('join_note_room', (data) => {
+    const { noteId, sessionId } = data;
     socket.join(noteId);
+    socket.noteId = noteId;
+    socket.sessionId = sessionId;
     console.log(`User ${socket.id} joined room for note: ${noteId}`);
   });
 
@@ -33,13 +36,18 @@ io.on('connection', (socket) => {
     socket.to(noteId).emit('receive_changes', { title, body });
   });
 
+  socket.on('cursor_change', (data) => {
+    const { noteId, position, sessionId } = data;
+    socket.to(noteId).emit('receive_cursor_change', { sessionId, position });
+  });
+
   socket.on('disconnect', () => {
     console.log(`User disconnected: ${socket.id}`);
   });
 });
 
 app.get('/', (req, res) => {
-  res.send('Notes API is running 🚀');
+  res.send('Notes API is running');
 });
 
 app.post('/notes', async (req, res) => {
